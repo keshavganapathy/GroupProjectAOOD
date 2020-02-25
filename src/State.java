@@ -4,19 +4,15 @@ import java.util.*;
 
 public class State {
 	private ArrayList<Change> modRep;
+	private String path;
 	
-	public static void main(String[] args){
-		ArrayList<Change> curry = new ArrayList<Change>();
-		State a = new State(curry);
-		a.print();
-	}
-	
-	public State(ArrayList<Change> report) {
+	public State(ArrayList<Change> report, String path) {
 		modRep = report;
+		this.path = path;
 	}
 
 	public ArrayList<Change> getModificationReport() {
-		return this.modRep;
+		return modRep;
 	}
 
 	public void save() {
@@ -32,5 +28,9 @@ public class State {
 				System.out.println(exc);
 			}
 		}
+	}
+	
+	public String getPath() {
+		return path;
 	}
 }
