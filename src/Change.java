@@ -1,17 +1,17 @@
 
 public class Change {
-	private String pathname;
+	private String pathName;
 	public Type type;
-	enum Type{
-		NEW,EDIT
+	enum Type {
+		NEW, EDIT
 	}
 	public Change(String pathName, Type type) {
-		pathname = pathName;
+		this.pathName = pathName;
 	}
 	public Type getType() {
-		return this.type;
+		return type;
 	}
 	public String getPath() {
-		return this.pathname;
+		return pathName;
 	}
 }
