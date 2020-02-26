@@ -1,6 +1,8 @@
 import java.awt.*;
 import java.awt.print.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class State {
@@ -22,12 +24,12 @@ public class State {
 		
 		return modificationReport;
 	}
-	
-	public ArrayList<Change> getModificationReport() {
+	/*public ArrayList<Change> getModificationReport() {
 		return modificationReport;
-	}
+	}*/
 
 	public void save(String filename) {
+		String word = "";
 		try {
 			FileWriter writer = new FileWriter(filename, true);
 			writer.write(word);

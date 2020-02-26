@@ -1,3 +1,4 @@
+
 public class Change {
 	private String pathName;
 	public Type type;

@@ -10,6 +10,7 @@ public class Archive {
 	private String archivePath;
 	private String dataPath;
 	private String metadataPath;
+	private String statesFolderPath;
 
 	ArrayList<State> states; //states ordered from oldest to newest
 	
@@ -17,14 +18,40 @@ public class Archive {
 	private int numberStatesKept;  //TODO: remember to change this in the other class this will be changed in
 	private int loadingBarCounter;
 
-	private int stateNumber = 1; //TODO: temporary. this is the number of the latest state.
+	private int stateNumber = 3; //TODO: temporary. this is the number of the latest state.
 
 	public Archive(String archivePath, String dataPath, boolean newArchive) {
 		this.archivePath = archivePath;
 		this.dataPath = dataPath;
 		metadataPath = archivePath + "/metadata";
+		statesFolderPath = metadataPath + "/states";
+		
+		states = new ArrayList<State>();
+		
+		File statesFolder = new File(statesFolderPath);
+
 		if (newArchive) {
+			File metadataFolder = new File(metadataPath);
+			metadataFolder.mkdir();
+			
+			statesFolder.mkdir();
 			//create XML file
+		} else {
+			//creating the list of states
+			String[] statePaths = statesFolder.list();
+			for (int i = 0; i < statePaths.length; i++) {
+				statePaths[i] = statesFolderPath + "/" + statePaths[i];
+				String[] splitName = statePaths[i].split("_");
+				// the id will be the second of the two indices
+				int id = Integer.parseInt(splitName[1]); 
+				states.add(new State(statePaths[i], id));
+			}
+			
+			
+			for (State state: states) {
+				System.out.println(state.getPath());
+				System.out.println(state.getID());
+			}
 		}
 	}
 	
@@ -32,7 +59,7 @@ public class Archive {
 		return null; //returns path of selected directory
 	}
 
-	public void trimState(int selectedIndex) {
+	public void trimState(int selectedIndex) { //TODO: test trimState
 		//
 		//TODO: change modification report for the more recent state
 		//TODO: modify file system, deleting the folder for each state before
@@ -69,7 +96,7 @@ public class Archive {
 		//first, creating a new directory
 		//path of the new state file will be in the metadata folder
 
-		String newStatePath = metadataPath + "/state_" + stateNumber;
+		String newStatePath = statesFolderPath + "/state_" + stateNumber;
 		File newStateDirectory = new File(newStatePath);
 		if (!newStateDirectory.exists()) {
 			newStateDirectory.mkdir();
