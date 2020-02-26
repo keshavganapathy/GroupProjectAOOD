@@ -1,19 +1,30 @@
 import java.awt.*;
 import java.awt.print.*;
+import java.io.File;
 import java.util.*;
 
 public class State {
-	private ArrayList<Change> modRep;
+	private ArrayList<Change> modificationReport;
 	private String path;
-	
-	public State(ArrayList<Change> report, String path) {
-		modRep = report;
+	private int id; //each state has a unique id, that will stay the same for its entire lifetime ((name of state folder))
+
+	public State(String path, int id) {
 		this.path = path;
+		this.id = id;
 	}
 
-	public ArrayList<Change> getModificationReport() {
-		return modRep;
+	public ArrayList<Change> createModificationReport() {
+		modificationReport = new ArrayList<Change>();
+		//assuming that the state before this one exists
+		File currentState = new File(path);
+		File metadataFolder = new File(currentState.getParent()); //parent of the state path is metadata folder
+		File previousState = new File(metadataFolder + "/state_" + (id - 1));
+		
+		return modificationReport;
 	}
+	/*public ArrayList<Change> getModificationReport() {
+		return modificationReport;
+	}*/
 
 	public void save() {
 
@@ -24,13 +35,17 @@ public class State {
 		if (pj.printDialog()) {
 			try {
 				pj.print();
-			} catch (PrinterException exc) {
-				System.out.println(exc);
+			} catch (PrinterException ex) {
+				ex.printStackTrace();
 			}
 		}
 	}
 	
 	public String getPath() {
 		return path;
+	}
+
+	public int getID() {
+		return id;
 	}
 }
