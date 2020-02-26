@@ -1,6 +1,6 @@
 import java.awt.*;
 import java.awt.print.*;
-import java.io.File;
+import java.io.*;
 import java.util.*;
 
 public class State {
@@ -22,12 +22,20 @@ public class State {
 		
 		return modificationReport;
 	}
-	/*public ArrayList<Change> getModificationReport() {
+	
+	public ArrayList<Change> getModificationReport() {
 		return modificationReport;
-	}*/
+	}
 
-	public void save() {
-
+	public void save(String filename) {
+		try {
+			FileWriter writer = new FileWriter(filename, true);
+			writer.write(word);
+			writer.write("\r\n"); // write new line
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void print() {
