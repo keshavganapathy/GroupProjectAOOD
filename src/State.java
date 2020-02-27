@@ -22,6 +22,18 @@ public class State {
 		File metadataFolder = new File(currentState.getParent()); //parent of the state path is metadata folder
 		File previousState = new File(metadataFolder + "/state_" + (id - 1));
 		
+		//String[] currentFiles = currentState.list();
+		File[] currentFiles = currentState.listFiles();
+
+		for (File f: currentFiles) {
+			System.out.println(f.getAbsolutePath());
+		}
+		
+		//TODO: somehow get all the files in the subdirectories as well. recursion? idk
+		
+		for (Change change: modificationReport) {
+			System.out.println(change.getPath() + " - " + change.getType());
+		}
 		return modificationReport;
 	}
 	/*public ArrayList<Change> getModificationReport() {

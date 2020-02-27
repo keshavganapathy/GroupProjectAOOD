@@ -18,7 +18,7 @@ public class Archive {
 	private int numberStatesKept;  //TODO: remember to change this in the other class this will be changed in
 	private int loadingBarCounter;
 
-	private int stateNumber = 3; //TODO: temporary. this is the number of the latest state.
+	private int stateNumber = 5; //TODO: temporary. this is the number of the latest state.
 
 	public Archive(String archivePath, String dataPath, boolean newArchive) {
 		this.archivePath = archivePath;
@@ -48,10 +48,10 @@ public class Archive {
 			}
 			
 			
-			for (State state: states) {
+			/*for (State state: states) {
 				System.out.println(state.getPath());
 				System.out.println(state.getID());
-			}
+			}*/
 		}
 	}
 	
@@ -64,10 +64,20 @@ public class Archive {
 		//TODO: change modification report for the more recent state
 		//TODO: modify file system, deleting the folder for each state before
 		//selected index
+		for (State state: states) {
+			System.out.println(state.getPath());
+			System.out.println(state.getID());
+		}
+		
+		
 		File currentDirectory;
 		for (int i = selectedIndex; i >= 0; i--) { //counting down is important
 			currentDirectory = new File(states.get(i).getPath());
-			currentDirectory.delete();
+			try {
+				FileUtils.deleteDirectory(currentDirectory);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			states.remove(i);
 		}
 		//change the modification report of state of index 0.
@@ -84,7 +94,8 @@ public class Archive {
 		File destination = new File(destinationPath);
 		
 		try {
-			FileUtils.copyDirectory(source, destination);
+			FileUtils.cleanDirectory(destination); //deleting all files in the target directory
+			FileUtils.copyDirectory(source, destination); //replacing the target directory w/ source directory
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
