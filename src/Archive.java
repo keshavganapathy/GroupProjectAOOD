@@ -8,6 +8,7 @@ import org.apache.commons.io.FileUtils;
 //library for copying files
 public class Archive {
 	private String archivePath;
+	private String archiveDataPath;
 	private String dataPath;
 	private String metadataPath;
 	private String statesFolderPath;
@@ -23,6 +24,9 @@ public class Archive {
 	public Archive(String archivePath, String dataPath, boolean newArchive) {
 		this.archivePath = archivePath;
 		this.dataPath = dataPath;
+		File archive = new File(archivePath);
+		archiveDataPath = archivePath + "/" + archive.getName();
+		
 		metadataPath = archivePath + "/metadata";
 		statesFolderPath = metadataPath + "/states";
 		
@@ -33,6 +37,8 @@ public class Archive {
 		if (newArchive) {
 			File metadataFolder = new File(metadataPath);
 			metadataFolder.mkdir();
+			File archiveDataPathFolder = new File(archiveDataPath);
+			archiveDataPathFolder.mkdir();
 			
 			statesFolder.mkdir();
 			//create XML file
@@ -114,7 +120,7 @@ public class Archive {
 		}
 
 		//creating the signal file in the metadata folder
-		String signalFilePath = metadataPath + "SIGNAL_FILE_206214"; //this name gotta stay constant
+		String signalFilePath = metadataPath + "SIGNAL_FILE_206214.txt"; //this name gotta stay constant
 		File signalFile = new File(signalFilePath);
 		try {
 			signalFile.createNewFile();
