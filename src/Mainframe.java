@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 
 public class Mainframe {
-ArrayList<Archive> archives;
+	ArrayList<Archive> archives;
 	public Mainframe() {
 		archives = new ArrayList<Archive>();
 	}

@@ -7,60 +7,104 @@ import java.util.*;
 
 public class State {
 	private ArrayList<Change> modificationReport;
-	private String path;
+	private String statePath;
 	private int id; //each state has a unique id, that will stay the same for its entire lifetime ((name of state folder))
-
-	public State(String path, int id) {
-		this.path = path;
+	private String dataPath;
+	
+	public State(String statePath, int id, String dataPath) {
+		this.statePath = statePath;
 		this.id = id;
+		this.dataPath = dataPath;
 	}
 
 	public ArrayList<Change> createModificationReport() {
 		modificationReport = new ArrayList<Change>();
 		//assuming that the state before this one exists
-		File currentState = new File(path);
+		File currentState = new File(statePath);
 		File metadataFolder = new File(currentState.getParent()); //parent of the state path is metadata folder
-		File previousState = new File(metadataFolder + "/state_" + (id - 1));
+		String previousStatePath = metadataFolder + "\\state_" + (id - 1);
+		File previousState = new File(previousStatePath);
 		
 		//String[] currentFiles = currentState.list();
 		ArrayList<File> currentFiles = getAllFiles(currentState);
-
-		for (File f: currentFiles) {
-			System.out.println(f.getAbsolutePath());
+		
+		String[] currentStateFilePaths = getOnlyFilePaths(currentFiles, statePath);
+		
+		ArrayList<File> previousFiles = getAllFiles(previousState);
+		String[] previousStateFilePaths = getOnlyFilePaths(previousFiles, previousStatePath);
+		
+		/*System.out.println("current: ");
+		for (String str: currentStateFilePaths) {
+			System.out.println(str);
 		}
 		
-		//TODO: somehow get all the files in the subdirectories as well. recursion? idk
+		System.out.println("previous: ");
+		for (String str: previousStateFilePaths) {
+			System.out.println(str);
+		}*/
 		
+		
+		//new files
+		for (int i = 0; i < currentStateFilePaths.length; i++) {
+			String filePath = currentStateFilePaths[i];
+			if (!arrayContains(previousStateFilePaths, filePath)) {
+				modificationReport.add(new Change(statePath + "\\" + filePath, Change.Type.NEW));
+			}
+		}
+		
+		//edited files
+		for (int i = 0; i < currentStateFilePaths.length; i++) {
+			String filePath = currentStateFilePaths[i];
+			if (arrayContains(previousStateFilePaths, filePath)) {
+				File currentFile = new File(statePath + "\\" + filePath);
+				File previousFile = new File(previousStatePath + "\\" + filePath);
+				/*System.out.println("currentmodified: " + currentFile.lastModified());
+				System.out.println("previousmodified: " + previousFile.lastModified());*/
+				if (currentFile.lastModified() != previousFile.lastModified()) {
+					modificationReport.add(new Change(statePath + "\\" + filePath, Change.Type.EDIT));
+				}
+			}
+		}
+		//TODO: new and edits
+		/*System.out.println("\n\n report:");
 		for (Change change: modificationReport) {
 			System.out.println(change.getPath() + " - " + change.type());
-		}
+		}*/
 		return modificationReport;
 	}
 	/*public ArrayList<Change> getModificationReport() {
 		return modificationReport;
 	}*/
+	
+	private static boolean arrayContains(String[] arr, String str) {
+		boolean returnBoolean = false;
+		for (int i = 0; i < arr.length; i++) {
+			if (arr[i].equals(str)) {
+				returnBoolean = true;
+			}
+		}
+		return returnBoolean;
+	}
 	private ArrayList<File> getAllFiles(File currentState) {
 		ArrayList<File> returnArrayList = new ArrayList<File>();
 		File[] currentFiles = currentState.listFiles();
 		returnArrayList = ArrayToArrayList(currentFiles);
+		
+		ArrayList<File> iterateFiles = new ArrayList<File>();
+		for (File file: returnArrayList) {
+			iterateFiles.add(file);
+		}
+		
 		File currentFile;
-		for (int i = 0; i < returnArrayList.size(); i++) {
-			currentFile = new File(returnArrayList.get(i).getAbsolutePath());
+		for (int i = 0; i < iterateFiles.size(); i++) {
+			currentFile = new File(iterateFiles.get(i).getAbsolutePath());
 			if (currentFile.isDirectory()) {
 				returnArrayList.addAll(getAllFiles(currentFile));
 			}
 		}
-	
-		/*for (File file: returnArrayList) {
-			currentFile = new File(file.getAbsolutePath());
-			if (currentFile.isDirectory()) {
-				returnArrayList.addAll(getAllFiles(currentFile));
-			}
-		}*/
+
 		return returnArrayList;
-		/*for (int i = 0; i < returnArrayList.size(); i++) {
-			currentFile = new File(returnArrayList.size())
-		}*/
+
 	}
 	
 	private ArrayList<File> ArrayToArrayList(File[] array) {
@@ -102,10 +146,19 @@ public class State {
 	}
 	
 	public String getPath() {
-		return path;
+		return statePath;
 	}
 
 	public int getID() {
 		return id;
+	}
+	
+	public static String[] getOnlyFilePaths(ArrayList<File> files, String removePath) {
+		String[] returnArray = new String[files.size()];
+		for (int i = 0; i < files.size(); i++) {
+			returnArray[i] = files.get(i).getAbsolutePath().replace(removePath + "\\", "");
+		}
+		
+		return returnArray;
 	}
 }

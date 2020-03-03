@@ -19,16 +19,16 @@ public class Archive {
 	private int numberStatesKept;  //TODO: remember to change this in the other class this will be changed in
 	private int loadingBarCounter;
 
-	private int stateNumber = 5; //TODO: temporary. this is the number of the latest state.
+	private int stateNumber = 4; //TODO: temporary. this is the number of the latest state.
 
 	public Archive(String archivePath, String dataPath, boolean newArchive) {
 		this.archivePath = archivePath;
 		this.dataPath = dataPath;
 		File archive = new File(archivePath);
-		archiveDataPath = archivePath + "/" + archive.getName();
+		archiveDataPath = archivePath + "\\" + archive.getName();
 		
-		metadataPath = archivePath + "/metadata";
-		statesFolderPath = metadataPath + "/states";
+		metadataPath = archivePath + "\\metadata";
+		statesFolderPath = metadataPath + "\\states";
 		
 		states = new ArrayList<State>();
 		
@@ -46,11 +46,11 @@ public class Archive {
 			//creating the list of states
 			String[] statePaths = statesFolder.list();
 			for (int i = 0; i < statePaths.length; i++) {
-				statePaths[i] = statesFolderPath + "/" + statePaths[i];
+				statePaths[i] = statesFolderPath + "\\" + statePaths[i];
 				String[] splitName = statePaths[i].split("_");
 				// the id will be the second of the two indices
 				int id = Integer.parseInt(splitName[1]); 
-				states.add(new State(statePaths[i], id));
+				states.add(new State(statePaths[i], id, dataPath));
 			}
 			
 			
@@ -113,7 +113,7 @@ public class Archive {
 		//first, creating a new directory
 		//path of the new state file will be in the metadata folder
 
-		String newStatePath = statesFolderPath + "/state_" + stateNumber;
+		String newStatePath = statesFolderPath + "\\state_" + stateNumber;
 		File newStateDirectory = new File(newStatePath);
 		if (!newStateDirectory.exists()) {
 			newStateDirectory.mkdir();
@@ -138,9 +138,35 @@ public class Archive {
 		//TODO: change the XML file. (state info, and increment the latest state number by 1)
 		signalFile.delete();
 
-		states.add(new State(newStatePath, stateNumber));
+		states.add(new State(newStatePath, stateNumber, dataPath));
 		stateNumber++;
 	}
+	
+	public void cleanUp(boolean replace) {
+		File currentDirectory = new File(states.get(stateNumber).getPath());
+		try {
+			FileUtils.deleteDirectory(currentDirectory);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		states.remove(stateNumber);
+		File signalFile = new File(metadataPath + "\\metadata\\SIGNAL_FILE_206214.txt");
+		signalFile.delete();
+		if (replace) {
+			backUp();
+		}
+	}
+	
+	public void check() {
+		File signalFile = new File(metadataPath + "\\SIGNAL_FILE_206214.txt");
+		if(signalFile.exists()) {
+			cleanUp(false); //TODO: this should be a popup that asks the user what 
+			//they would like to do and calls cleanup(boolean b) 
+			//accordingly	
+		}
+	}
+	
 	public void changeDataLocation(String newPath) {
 		dataPath = newPath;
 	}
