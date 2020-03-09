@@ -1,9 +1,29 @@
+//Comments from keshav
+
+//Selected Archive buttons shouldnt be able to have an action on it
+//When you move back to a screen clear all previous actions, uncheck boxes
+//Select Archive screen needs back button
+//New Archive screen information to type in should be black color not the gray filler info
+//Increase size of file explorer thing yes sir yes sir
+
+//Comments from big hammy
+//Automatic trim popup not functioning properly 
+// Remove Checkboxes in get modification reprot
+//-buttons(find data location,archive location,etc) should pop up file explorer
+//-back up error message should not pop up with manual trim
+//-arch list should initially be empty(to be done during integration)
+
+// New Comments
+// Select Data location and select Archive Location not working on archive page
+// Select archive location popup in Save As
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 public class VisualsForIntegration implements ActionListener{
 	enum Page {START, ARCHIVE_LIST, NEW_ARCHIVE, OPEN_FILE, OLD_ARCHIVE, MODIFICATION_REPORT, 
@@ -24,13 +44,27 @@ public class VisualsForIntegration implements ActionListener{
 	private static JPanel autoConfirmation;
 	private static JPanel backUp;
 	private static JPanel recovery;
-	private static JPanel progressBar;
+	private static ProgressBar progressBar;
 	private static Color w;
 	private static Color b;
 	private static Color g;
 	private static ArrayList<Page> history;
+	private static Page currPage;
 	private static boolean valid;
-	private static int trimBehavior;
+	private static JTextField trimBehavior;
+	private static String archive;
+	private static Mainframe mainframe;
+	
+	public static String browseFileExplorer() {
+		JFileChooser jfc = new JFileChooser();
+		jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);		
+		jfc.showOpenDialog(null);
+		if(jfc.getSelectedFile() != null)
+			return jfc.getSelectedFile().toString();
+		else
+			return null;
+	}
+
 	public VisualsForIntegration() {	
 		start=new JPanel();
 		archiveList=new JPanel();
@@ -47,12 +81,15 @@ public class VisualsForIntegration implements ActionListener{
 		autoConfirmation=new JPanel();
 		backUp=new JPanel();
 		recovery=new JPanel();
+		progressBar=new ProgressBar();
 		w=new Color(250,250,250);
 		b=new Color(100,150,200);
 		g=new Color(180,180,180);
 		history=new ArrayList<Page>();
+		currPage=Page.START;
 		valid=false;
-		trimBehavior=1;
+		trimBehavior=new JTextField("1");
+		archive="";
 		makeStart();
 		makeArchiveList();
 		makeNewArchive();
@@ -92,15 +129,17 @@ public class VisualsForIntegration implements ActionListener{
 		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.START);
+				currPage=Page.ARCHIVE_LIST;
 				frame.setContentPane(archiveList);
 				frame.revalidate();
 			}
 		});
 	}
 	public void makeArchiveList() {
+		currPage=Page.ARCHIVE_LIST;
 		archiveList.setBackground(w);
 		archiveList.setLayout(new BoxLayout(archiveList, BoxLayout.Y_AXIS));
-		archiveList.setBorder(BorderFactory.createEmptyBorder(100,0,100,0));		
+		archiveList.setBorder(BorderFactory.createEmptyBorder(0,0,100,0));		
 		JLabel title=new JLabel("Sync-Tool");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
@@ -115,22 +154,35 @@ public class VisualsForIntegration implements ActionListener{
 		JPanel container = new JPanel();
 		container.setLayout(new GridLayout(0,1,0,0));
 		container.setBackground(w);
-		for(int i=0;i<10;i++) {
+		if(mainframe.getArchives().size() > 0){
+			for(Archive arch: mainframe.getArchives()) {
+				JButton temp=new JButton();
+			    temp.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+			    temp.setText(arch.getName());//to be changed
+			    temp.setBackground(w);
+			    temp.setForeground(b);
+			    temp.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));	
+			    temp.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {	
+						history.add(Page.ARCHIVE_LIST);
+						oldArchive.removeAll();
+						archive=e.getActionCommand();
+						makeOldArchive(archive);					
+						currPage=Page.OLD_ARCHIVE;
+						frame.setContentPane(oldArchive);	
+						frame.revalidate();
+					}
+				});
+			    temp.setHorizontalAlignment(JButton.LEFT);
+				container.add(temp);
+			}
+		}else{
 			JButton temp=new JButton();
 		    temp.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		    temp.setText("Archive "+(i+1));//to be changed
+		    temp.setText("No Archives Made Please Create a new Archive");//to be changed
 		    temp.setBackground(w);
 		    temp.setForeground(b);
 		    temp.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));	
-		    temp.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					history.add(Page.ARCHIVE_LIST);
-					oldArchive.removeAll();
-					makeOldArchive(e.getActionCommand());
-					frame.setContentPane(oldArchive);	
-					frame.revalidate();
-				}
-			});
 		    temp.setHorizontalAlignment(JButton.LEFT);
 			container.add(temp);
 		}
@@ -153,7 +205,8 @@ public class VisualsForIntegration implements ActionListener{
 	    p.setLayout(new FlowLayout());
 	    p.add(findArchive);
 	    p.add(Box.createRigidArea(new Dimension(200,0)));
-	    p.add(newArchiveButton);	    
+	    p.add(newArchiveButton);	 
+	    archiveList.add(backButton());
 		archiveList.add(title);
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		title.setBorder(BorderFactory.createEmptyBorder(0,0,50,0));		
@@ -164,24 +217,26 @@ public class VisualsForIntegration implements ActionListener{
 		scroll.setBorder(BorderFactory.createEmptyBorder(0,155,100,155));	
 		archiveList.add(p);
 		newArchiveButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-
 		newArchiveButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.ARCHIVE_LIST);
+				currPage=Page.NEW_ARCHIVE;
 				frame.setContentPane(newArchive);	
 				frame.revalidate();
 			}});
 		findArchive.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.ARCHIVE_LIST);
+				currPage=Page.OPEN_FILE;
 				frame.setContentPane(openFile);	
 				frame.revalidate();
+				browseFileExplorer();
 			}});
 	}
 	public void makeNewArchive() {
 		newArchive.setBackground(w);
 		newArchive.setLayout(new BoxLayout(newArchive, BoxLayout.Y_AXIS));
-		newArchive.setBorder(BorderFactory.createEmptyBorder(30,20,70,20));				  
+		newArchive.setBorder(BorderFactory.createEmptyBorder(0,20,70,20));				  
 		JLabel title=new JLabel("New Archive Page");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
@@ -246,6 +301,16 @@ public class VisualsForIntegration implements ActionListener{
 				if(valid)
 	  				create.setBackground(b);
 			}});
+	    selectDLocation.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				dLocation.setText(browseFileExplorer());
+				dLocation.setForeground(Color.black);
+			}});
+	    selectALocation.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				aLocation.setText(browseFileExplorer());
+				aLocation.setForeground(Color.black);
+			}});
 	    aLocation.addActionListener(new ActionListener() {
 	  		public void actionPerformed(ActionEvent e) {
 	  			valid=!(name.getText().isEmpty()||dLocation.getText().isEmpty()||aLocation.getText().isEmpty());
@@ -256,15 +321,18 @@ public class VisualsForIntegration implements ActionListener{
 	  		public void actionPerformed(ActionEvent e) {
 	  			if(valid) {
 	  				history.add(Page.NEW_ARCHIVE);
+	  				currPage=Page.OLD_ARCHIVE;
 	  				frame.setContentPane(oldArchive);
 	  				frame.revalidate();
+					Archive a = new Archive(aLocation.getText(), dLocation.getText(), true, name.getText());
 	  			}
 	  		}});	  	
 	}
 	public void makeOpenFile() {
+		currPage=Page.OPEN_FILE;
 		openFile.setBackground(w);
 		openFile.setLayout(new BoxLayout(openFile, BoxLayout.Y_AXIS));
-		openFile.setBorder(BorderFactory.createEmptyBorder(50,20,70,20));			
+		openFile.setBorder(BorderFactory.createEmptyBorder(0,20,70,20));			
 		JLabel title=new JLabel("Open File Explorer");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
@@ -273,6 +341,7 @@ public class VisualsForIntegration implements ActionListener{
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 	}
 	public void makeOldArchive(String s) {
+		currPage=Page.OLD_ARCHIVE;
 		oldArchive.setBackground(w);
 		oldArchive.setLayout(new BoxLayout(oldArchive, BoxLayout.Y_AXIS));
 		oldArchive.setBorder(BorderFactory.createEmptyBorder(0,20,20,20));	
@@ -289,7 +358,7 @@ public class VisualsForIntegration implements ActionListener{
 	    final JButton trimButton=new JButton();
 	    trimButton.setText("   Trim   ");
 	    trimButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-	    if(trimBehavior<1)
+	    if(!trimBehavior.isVisible())
 	    	trimButton.setBackground(g);
 	    else
 	    	trimButton.setBackground(b);
@@ -326,7 +395,7 @@ public class VisualsForIntegration implements ActionListener{
 	    getMod.setBackground(g);
 	    getMod.setForeground(w);	
 		ButtonGroup group = new ButtonGroup();
-		valid=false;
+		valid=trimBehavior.isVisible();
 		for(int i=0;i<10;i++) {
 			JRadioButton temp=new JRadioButton();
 			temp.addActionListener(new ActionListener() {
@@ -379,13 +448,17 @@ public class VisualsForIntegration implements ActionListener{
 	    backUpButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.OLD_ARCHIVE);
-				frame.setContentPane(backUp);
-				frame.revalidate();
+				currPage=Page.BACKUP;
+				if(trimBehavior.isVisible()) {
+					frame.setContentPane(backUp);
+					frame.revalidate();
+				}
 			}
 		});
 	    settingsButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.OLD_ARCHIVE);
+				currPage=Page.SETTINGS;
 				frame.setContentPane(settings);
 				frame.revalidate();
 			}
@@ -404,6 +477,7 @@ public class VisualsForIntegration implements ActionListener{
 			public void actionPerformed(ActionEvent e) {
 			    if(valid) {
 					history.add(Page.OLD_ARCHIVE);
+					currPage=Page.SAVE;
 					frame.setContentPane(saveAs);
 					frame.revalidate();
 			    }
@@ -413,6 +487,7 @@ public class VisualsForIntegration implements ActionListener{
 			public void actionPerformed(ActionEvent e) {
 			    if(valid) {
 					history.add(Page.OLD_ARCHIVE);
+					currPage=Page.MODIFICATION_REPORT;
 					frame.setContentPane(modificationReport);
 					frame.revalidate();
 			    }
@@ -433,17 +508,17 @@ public class VisualsForIntegration implements ActionListener{
 		scrollHeader.setForeground(w);
 		scrollHeader.setBackground(b);
 		JPanel container = new JPanel();
-		container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+		container.setLayout(new GridLayout(0,1,0,0));
 		container.setBackground(w);
 		for(int i=0;i<10;i++) {
-			JCheckBox temp=new JCheckBox();
-			temp.addActionListener(this);//add to arrayList
+			JLabel temp=new JLabel();
 		    temp.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		    temp.setText("File Name "+(i+1));
 		    temp.setBackground(w);
 		    temp.setForeground(b);
 		    temp.setBorder(BorderFactory.createEmptyBorder());
-		    temp.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));		
+		    temp.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));	
+		    temp.setHorizontalAlignment(JButton.LEFT);
 			container.add(temp);
 		}		
 		JScrollPane scroll = new JScrollPane(container);    
@@ -528,7 +603,7 @@ public class VisualsForIntegration implements ActionListener{
 	public void makeSettings() {
 		settings.setBackground(w);
 		settings.setLayout(new BoxLayout(settings, BoxLayout.Y_AXIS));
-		settings.setBorder(BorderFactory.createEmptyBorder(20,50,70,50));				  
+		settings.setBorder(BorderFactory.createEmptyBorder(0,50,70,50));				  
 		JLabel title=new JLabel("Settings");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);		
@@ -573,16 +648,11 @@ public class VisualsForIntegration implements ActionListener{
 	    space.add(save);	
 	    space.setBorder(BorderFactory.createEmptyBorder(250,900,0,0));
 	    settings.add(space);
-		
-	    //meena what to do for selecting
-	    selectDLocation.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
 
-			}
-		});
 	    trimButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.SETTINGS);
+				currPage=Page.TRIM;
 				frame.setContentPane(trim);
 				frame.revalidate();
 				//frame.pack();
@@ -598,14 +668,14 @@ public class VisualsForIntegration implements ActionListener{
 	  //meena what to do for back???????
 	    selectDLocation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
+				browseFileExplorer();
 			}
 		});
 	}
 	public void makeSaveAs() {
 		saveAs.setBackground(w);
 		saveAs.setLayout(new BoxLayout(saveAs, BoxLayout.Y_AXIS));
-		saveAs.setBorder(BorderFactory.createEmptyBorder(30,50,70,50));				  
+		saveAs.setBorder(BorderFactory.createEmptyBorder(0,50,70,50));				  
 		JLabel title=new JLabel("Save As");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);		
@@ -640,7 +710,7 @@ public class VisualsForIntegration implements ActionListener{
 	    save.setAlignmentX(Component.CENTER_ALIGNMENT);
 	    selectALocation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
+				browseFileExplorer();
 			}});
 	    aLocation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -675,7 +745,7 @@ public class VisualsForIntegration implements ActionListener{
 	public void makeTrim() {
 		trim.setBackground(w);
 		trim.setLayout(new BoxLayout(trim, BoxLayout.Y_AXIS));
-		trim.setBorder(BorderFactory.createEmptyBorder(50,20,70,20));	
+		trim.setBorder(BorderFactory.createEmptyBorder(0,20,70,20));	
 		JLabel title=new JLabel("Trim Behavior");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 100));
 		title.setForeground(b);
@@ -683,9 +753,8 @@ public class VisualsForIntegration implements ActionListener{
 		prompt.setText("How many versions do you want to keep?");
 		prompt.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		prompt.setForeground(b);
-		JTextField num=new JTextField(1);
-		num.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-	    num.setForeground(g);	
+		trimBehavior.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		trimBehavior.setForeground(g);	
 		JLabel versions=new JLabel();
 		versions.setText("versions");
 		versions.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
@@ -694,12 +763,12 @@ public class VisualsForIntegration implements ActionListener{
 		trimNum.setLayout(new FlowLayout());
 		trimNum.add(prompt);
 		prompt.setBorder(BorderFactory.createEmptyBorder(50,50,50,20));		
-		trimNum.add(num);
+		trimNum.add(trimBehavior);
 		trimNum.add(versions);			
 		JPanel gridPane=new JPanel();
 		gridPane.setLayout(new GridLayout(1,2,50,50));
 		gridPane.setBackground(w);
-		JRadioButton radio1=new JRadioButton("Manual Trim");//meena should enlarge these buttons
+		JRadioButton radio1=new JRadioButton("Manual Trim");
 		radio1.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 50));
 		radio1.setForeground(b);
 		radio1.setBackground(w);
@@ -707,6 +776,7 @@ public class VisualsForIntegration implements ActionListener{
 		radio2.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 50));
 		radio2.setForeground(b);
 		radio2.setBackground(w);
+		radio2.setSelected(true);
 		JPanel p=new JPanel();
 		p.setLayout(new GridLayout(1,2,50,10));
 		p.setBackground(w);		
@@ -715,26 +785,28 @@ public class VisualsForIntegration implements ActionListener{
 		group.add(radio2);		
 		gridPane.add(radio1);
 		gridPane.add(radio2);		
-		num.setMinimumSize(new Dimension(150,150));
+		trimBehavior.setMinimumSize(new Dimension(150,150));
 		trim.add(backButton());
 		trim.add(title);
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		trim.add(gridPane);	
 		gridPane.setAlignmentX(Component.CENTER_ALIGNMENT);
 		gridPane.setBorder(BorderFactory.createEmptyBorder(50,300,20,300));	
-		num.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				trimBehavior=Integer.parseInt(e.getActionCommand());
-			}});
+		trim.add(trimNum);
 		radio1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				trimBehavior=0;
-				trim.remove(trimNum);
+				trimNum.setVisible(false);
+				trimBehavior.setVisible(false);
+				oldArchive.removeAll();
+				makeOldArchive(archive);
 				frame.revalidate();
 			}});
 		radio2.addActionListener(new ActionListener() {//show textbox
 			public void actionPerformed(ActionEvent e) {
-				trim.add(trimNum);
+				trimNum.setVisible(true);
+				trimBehavior.setVisible(true);	
+				oldArchive.removeAll();
+				makeOldArchive(archive);
 				frame.revalidate();
 			}});	
 	}
@@ -744,8 +816,8 @@ public class VisualsForIntegration implements ActionListener{
 		JLabel title=new JLabel("Automatic Trim Confirmation");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
-		JLabel message=new JLabel("<html><center>You have selected to keep [num] version(s) "
-				+ "with Automatic Trim. Do you wish to continue with this decision?</center></html>", 
+		JLabel message=new JLabel("<html><center>You have selected to keep "+trimBehavior.getText()
+		+" version(s) with Automatic Trim. Do you wish to continue with this decision?</center></html>", 
 				SwingConstants.CENTER);
 		message.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		message.setForeground(b);
@@ -758,9 +830,10 @@ public class VisualsForIntegration implements ActionListener{
 		autoConfirmation.setPreferredSize(new Dimension(1200,700));
 	}
 	public void makeBackUp() {
+		currPage=Page.BACKUP;
 		backUp.setBackground(w);
 		backUp.setLayout(new BoxLayout(backUp, BoxLayout.Y_AXIS));
-		backUp.setBorder(BorderFactory.createEmptyBorder(50,20,70,20));	
+		backUp.setBorder(BorderFactory.createEmptyBorder(0,20,70,20));	
 		JLabel title=new JLabel("Back Up");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
@@ -793,7 +866,7 @@ public class VisualsForIntegration implements ActionListener{
 	public void makeRecovery() {
 		recovery.setBackground(w);
 		recovery.setLayout(new BoxLayout(recovery, BoxLayout.Y_AXIS));
-		recovery.setBorder(BorderFactory.createEmptyBorder(50,50,70,50));	
+		recovery.setBorder(BorderFactory.createEmptyBorder(0,50,70,50));	
 		JLabel title=new JLabel("Recovery");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
@@ -851,7 +924,7 @@ public class VisualsForIntegration implements ActionListener{
 			}});	
 	}
 	public void actionPerformed(ActionEvent e) {
-		if(e.getActionCommand().trim().equals("Trim")) {
+		if(valid&&e.getActionCommand().trim().equals("Trim")) {
 			JButton[] buttons= {new JButton("Cancel"),new JButton("Continue")};
 			buttons[0].addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {	
@@ -875,19 +948,8 @@ public class VisualsForIntegration implements ActionListener{
 					JOptionPane.getRootFrame().dispose();
 					//some restore happens
 				}});
-		    popUp(restore, "Restore Confirmation",buttons);
-		}else if(trimBehavior>1){
-			JButton[] buttons= {new JButton("No"),new JButton("Yes")};
-			popUp(autoConfirmation, "Autonomic Trim Confirmation",buttons);
-			buttons[0].addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					JOptionPane.getRootFrame().dispose();
-				}});
-			buttons[1].addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {	
-					JOptionPane.getRootFrame().dispose();
-					frame.setContentPane(oldArchive);
-				}});
+			if(valid)
+				popUp(restore, "Restore Confirmation",buttons);		
 		}
 		frame.revalidate();
 	}
@@ -900,17 +962,32 @@ public class VisualsForIntegration implements ActionListener{
 		JPanel backButton=new JPanel();
 		final JButton back=new JButton();
 		back.setText("  Back  ");
-		back.addActionListener(this);//to be go to latest history
 	    back.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 	    back.setBackground(b);
 	    back.setForeground(w);	
+	    final JButton[] buttons= {new JButton("No"),new JButton("Yes")};
+	    buttons[0].addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.getRootFrame().dispose();
+			}});
+		buttons[1].addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {	
+				JOptionPane.getRootFrame().dispose();
+				history.remove(history.size()-1);	
+				currPage=Page.SETTINGS;
+				frame.setContentPane(settings);
+				frame.revalidate();
+			}});	
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {	
-				if(trimBehavior>1) {
-					back.addActionListener(this);
-				}
+				if(currPage.equals(Page.TRIM)&&Integer.parseInt(trimBehavior.getText())>1){
+						autoConfirmation.removeAll();
+						makeAutoConfirmation();						
+						popUp(autoConfirmation, "Autonomic Trim Cgonfirmation",buttons);										 
+				}else {
 				if(history.size()>0) {
-					Page last=history.remove(history.size()-1);				
+					Page last=history.remove(history.size()-1);	
+					currPage=last;
 					if(last.equals(Page.START))
 						frame.setContentPane(start);
 					else if(last.equals(Page.ARCHIVE_LIST))
@@ -925,6 +1002,7 @@ public class VisualsForIntegration implements ActionListener{
 						frame.setContentPane(oldArchive);
 				}
 				frame.revalidate();
+				}
 			}
 		});
 
@@ -936,12 +1014,11 @@ public class VisualsForIntegration implements ActionListener{
 	    return backButton;
 	}
 	public void makeProgressBar() {
-		JProgressBar b=new JProgressBar();
-		b.setValue(0); 	  
-	    b.setStringPainted(true); 
+		//ProgressBar b=new ProgressBar();		
 	}
 	public static void main(String[] args) {
-		VisualsForIntegration v = new VisualsForIntegration();
+		VisualsForIntegration v=new VisualsForIntegration();
+		mainframe = new Mainframe();
 		frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setContentPane(start);
@@ -950,6 +1027,11 @@ public class VisualsForIntegration implements ActionListener{
 	    frame.setVisible(true);
         UIManager.put("OptionPane.background",w);
         UIManager.put("Panel.background",w);     
+       /* try {
+			progressBar.iterate();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}*/
 	}
 }
 class HintText extends JTextField implements FocusListener {
@@ -984,7 +1066,29 @@ class HintText extends JTextField implements FocusListener {
 	    return showingHint ? "" : super.getText();
 	  }
 }
-
-
-
-
+class ProgressBar extends JPanel {
+	private static int counter=0;
+	private static int limit=1000;
+	public void paintComponent(Graphics g) {
+		g.setColor(new Color(250,250,250));
+		g.fillRect(0, 0, 1050, 250);
+		g.setColor(new Color(100,150,200));
+		g.fillRect(10, 10, limit+20, 100);
+		g.fillRect(70, 180, 900, 100);
+		g.setColor(new Color(250,250,250));
+		g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 50));
+		g.drawString("Your file has been backed up "+(counter*100/limit-1)+"%.",100,250);
+		g.setColor(new Color(250,250,250));
+		g.fillRect(20+counter, 15, limit+5-counter, 90);
+		g.setColor(new Color(100,200,150));
+		g.fillRect(15, 15, counter, 90);		
+	}
+	public void iterate() throws InterruptedException {
+		while (true &&counter<=limit){
+	        Thread.sleep(100);
+	        repaint();
+	        counter+=10;
+        }
+	}
+}
+ 
