@@ -6,8 +6,6 @@
 //New Archive screen information to type in should be black color not the gray filler info
 //Increase size of file explorer thing yes sir yes sir
 
-//Comments from big hammy
-//Automatic trim popup not functioning properly 
 
 //-arch list should initially be empty(to be done during integration)
 
@@ -50,8 +48,9 @@ public class Visuals implements ActionListener{
 	private static boolean valid;
 	private static JTextField trimBehavior;
 	private static String archive;
-	private static ArrayList<String> archives;
+	private static ArrayList<Archive> archives;
 	private Mainframe mainframe;
+	private Archive currentArchive;
 	
 	public static String browseFileExplorer() {
 		JFileChooser jfc = new JFileChooser();
@@ -88,7 +87,7 @@ public class Visuals implements ActionListener{
 		valid=false;
 		trimBehavior=new JTextField("1");
 		archive="[Old Archive Name]";
-		archives=new ArrayList<String>();
+		archives=new ArrayList<Archive>();
 		makeStart();
 		makeArchiveList();
 		makeNewArchive();
@@ -125,7 +124,6 @@ public class Visuals implements ActionListener{
 		start.add(startButton);
 		startButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		start.add(Box.createVerticalGlue());
-
 		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				history.add(Page.START);
@@ -168,7 +166,7 @@ public class Visuals implements ActionListener{
 			for(int i=0;i<archives.size();i++) {
 				JButton temp=new JButton();
 			    temp.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-			    temp.setText(archives.get(i));
+			    temp.setText(archives.get(i).getName());
 			    temp.setBackground(w);
 			    temp.setForeground(b);
 			    temp.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));	
@@ -299,18 +297,32 @@ public class Visuals implements ActionListener{
 			}});
 	    selectDLocation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				dLocation.setText(browseFileExplorer());
-				valid=!name.getText().isEmpty()&&!dLocation.getText().equals("Select Data Location")
-						&&!aLocation.getText().equals("Location Archive");
-				if(valid)
-	  				create.setBackground(b);
+				String val = browseFileExplorer();
+				if(val == null){
+	  				currPage=Page.NEW_ARCHIVE;
+	  				frame.setContentPane(newArchive);
+	  				frame.revalidate();
+				}else{
+					dLocation.setText(val);
+					valid=!name.getText().isEmpty()&&!dLocation.getText().equals("Select Data Location")
+							&&!aLocation.getText().equals("Location Archive");
+					if(valid)
+		  				create.setBackground(b);
+				}
 			}});
 	    selectALocation.addActionListener(new ActionListener() {
 	  		public void actionPerformed(ActionEvent e) {
-	  			aLocation.setText(browseFileExplorer());
-	  			valid=!(name.getText().isEmpty()||dLocation.getText().isEmpty()||aLocation.getText().isEmpty());
-	  			if(valid)
-	  				create.setBackground(b);
+				String val = browseFileExplorer();
+				if(val == null){
+	  				currPage=Page.NEW_ARCHIVE;
+	  				frame.setContentPane(newArchive);
+	  				frame.revalidate();
+				}else{
+		  			aLocation.setText(val);
+		  			valid=!(name.getText().isEmpty()||dLocation.getText().isEmpty()||aLocation.getText().isEmpty());
+		  			if(valid)
+		  				create.setBackground(b);
+				}
 	  		}});
 	  	create.addActionListener(new ActionListener() {
 	  		public void actionPerformed(ActionEvent e) {
@@ -323,7 +335,8 @@ public class Visuals implements ActionListener{
 	  		}});	  	
 	}
 	public void addArchive(String name,String dLoc,String aLoc) {
-		archives.add(name);
+		//String archivePath, String dataPath, boolean newArchive, String name
+		archives.add(new Archive(aLoc, dLoc, true, name));
 		archive=name;
 		oldArchive.removeAll();
 		makeOldArchive();
@@ -332,6 +345,7 @@ public class Visuals implements ActionListener{
 		archiveList.removeAll();
 		makeArchiveList();
 	}
+	
 	public void makeOpenFile() {
 		currPage=Page.OPEN_FILE;
 		openFile.setBackground(w);
