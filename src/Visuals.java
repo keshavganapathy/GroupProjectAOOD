@@ -17,8 +17,6 @@
 
 import javax.swing.*;
 
-import com.sun.javafx.tk.Toolkit.Task;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,7 +27,7 @@ import java.util.Enumeration;
 
 public class Visual implements ActionListener {
 	enum Page {
-		START, ARCHIVE_LIST, NEW_ARCHIVE, OPEN_FILE, OLD_ARCHIVE, MODIFICATION_REPORT, SETTINGS, SAVE, TRIM, BACKUP, RECOVERY;
+		START, ARCHIVE_LIST, NEW_ARCHIVE, OPEN_FILE, OLD_ARCHIVE, MODIFICATION_REPORT, SETTINGS, SAVE, TRIM, BACKUP, RECOVERY, RESTORE_LOC;
 	}
 
 	private static JFrame frame;
@@ -38,10 +36,9 @@ public class Visual implements ActionListener {
 	private static JPanel newArchive;
 	private static JPanel openFile;
 	private static JPanel oldArchive;
-	private static JPanel modificationReport;
 	private static JPanel confirmation;
 	private static JPanel settings;
-	private static JPanel saveAs;
+	private static JPanel restoreLoc;
 	private static JPanel restore;
 	private static JPanel trim;
 	private static JPanel trimNum;
@@ -53,10 +50,12 @@ public class Visual implements ActionListener {
 	private static Color g;
 	private static Page currPage;
 	private static boolean valid;
+	private static boolean validSave = false;;
 	private static JTextField trimBehavior;
 	private static String archive;
 	private static int selectedArchiveIndex;
 	private static int stateIndex;
+	private String restoreLocation;
 	private ProgressBar bar;
 	private JFrame popup;
 	final Timer t = new Timer(10, new ActionListener() {
@@ -66,7 +65,6 @@ public class Visual implements ActionListener {
 		}
 	});
 
-	// private static ArrayList<String> archives;
 	private Mainframe mainframe;
 	private ButtonGroup group;
 
@@ -86,10 +84,10 @@ public class Visual implements ActionListener {
 		newArchive = new JPanel();
 		openFile = new JPanel();
 		oldArchive = new JPanel();
-		modificationReport = new JPanel();
+		new JPanel();
 		confirmation = new JPanel();
 		settings = new JPanel();
-		saveAs = new JPanel();
+		restoreLoc = new JPanel();
 		restore = new JPanel();
 		trim = new JPanel();
 		trimNum = new JPanel();
@@ -105,22 +103,10 @@ public class Visual implements ActionListener {
 		trimBehavior = new JTextField("1");
 		archive = "[Old Archive Name]";
 		mainframe = new Mainframe();
-		// archives = new ArrayList<String>();
 		makeStart();
 		makeArchiveList();
 		makeNewArchive();
 		makeOpenFile();
-		// makeOldArchive();
-		// makeModificationReport();
-		// makeConfirmation();
-		// makeSettings();
-		// makeSaveAs();
-		// makeRestore();
-		// makeTrim();
-		// makeAutoConfirmation();
-		// makeBackUp();
-		// makeRecovery();
-		// makeProgressBar();
 	}
 
 	public void makeStart() {
@@ -262,6 +248,10 @@ public class Visual implements ActionListener {
 						frame.setContentPane(oldArchive);
 						frame.revalidate();
 					}
+				} else {
+					currPage = Page.ARCHIVE_LIST;
+					frame.setContentPane(archiveList);
+					frame.revalidate();
 				}
 			}
 		});
@@ -351,7 +341,6 @@ public class Visual implements ActionListener {
 		create.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (valid) {
-					// System.out.print(name.getText());
 					addArchive(name.getText(), dLocation.getText(), aLocation.getText() + "\\" + name.getText());
 					selectedArchiveIndex = mainframe.getArchives().size() - 1;
 					makeOldArchive();
@@ -365,7 +354,6 @@ public class Visual implements ActionListener {
 
 	public void addArchive(String name, String dLoc, String aLoc) {
 		mainframe.createArchive(dLoc, aLoc, name);
-		// archives.add(name);
 		archive = name;
 		oldArchive.removeAll();
 		makeOldArchive();
@@ -417,7 +405,7 @@ public class Visual implements ActionListener {
 		JLabel title = new JLabel(mainframe.getArchive(selectedArchiveIndex).getName());
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
-		JLabel scrollHeader = new JLabel("                     Drop Down with Archives" + "                     ");
+		JLabel scrollHeader = new JLabel("                     Drop Down with States" + "                     ");
 		scrollHeader.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		scrollHeader.setOpaque(true);
 		scrollHeader.setForeground(w);
@@ -430,7 +418,7 @@ public class Visual implements ActionListener {
 		scroll.setBackground(w);
 		scroll.getVerticalScrollBar().setUnitIncrement(10);
 		final JButton restore = new JButton();
-		restore.setText("<html><center>Restore to <br>Current Location</center></html>");
+		restore.setText("<html><center>Restore Data<br>to a Location </center></html>");
 		restore.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		restore.setBackground(g);
 		restore.setForeground(w);
@@ -446,20 +434,27 @@ public class Visual implements ActionListener {
 		getMod.setForeground(w);
 		group = new ButtonGroup();
 		valid = false;
-		// System.out.print((Integer) selectedArchiveIndex);
 		if (!((Integer) selectedArchiveIndex == null)) {
 			ArrayList<String> statesList = mainframe.getArchive(selectedArchiveIndex).returnDisplay();
 			for (int i = 0; i < statesList.size(); i++) {
 				JRadioButton temp = new JRadioButton();
 				temp.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						valid = true;
-						// stateIndex = i;
-						trimButton.setVisible(true);
-						trimButton.setBackground(b);
-						restore.setBackground(b);
-						browse.setBackground(b);
-						getMod.setBackground(b);
+						if (valid == true && statesList.size() == 1) {
+							valid = false;
+							trimButton.setBackground(g);
+							restore.setBackground(g);
+							browse.setBackground(g);
+							getMod.setBackground(g);
+							group.clearSelection();
+						} else {
+							valid = true;
+							trimButton.setVisible(true);
+							trimButton.setBackground(b);
+							restore.setBackground(b);
+							browse.setBackground(b);
+							getMod.setBackground(b);
+						}
 					}
 				});
 				temp.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
@@ -497,7 +492,6 @@ public class Visual implements ActionListener {
 		p2.setLayout(new FlowLayout());
 		p2.add(restore);
 		p2.add(Box.createRigidArea(new Dimension(100, 0)));
-		// p2.add(browse);
 		p2.add(Box.createRigidArea(new Dimension(100, 0)));
 		p2.add(getMod);
 		oldArchive.add(p2);
@@ -520,48 +514,28 @@ public class Visual implements ActionListener {
 			}
 		});
 		trimButton.addActionListener(this);
-		restore.addActionListener(this);
-		// browse.addActionListener(new ActionListener() {
-		// public void actionPerformed(ActionEvent e) {
-		// if (valid) {
-		// history.add(Page.OLD_ARCHIVE);
-		// makeSaveAs();
-		// currPage = Page.SAVE;
-		//
-		// frame.setContentPane(saveAs);
-		// frame.revalidate();
-		// }
-		// }
-		// });
+		restore.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (valid) {
+					makeRestoreLocation();
+					currPage = Page.RESTORE_LOC;
+					frame.setContentPane(restoreLoc);
+					frame.revalidate();
+				}
+			}
+		});
+
 		getMod.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (valid) {
-					currPage = Page.MODIFICATION_REPORT;
 					makeModificationReport();
-					frame.setContentPane(modificationReport);
-					frame.revalidate();
 				}
 			}
 		});
 
 	}
 
-	public void makeModificationReport() {
-		modificationReport = new JPanel();
-		modificationReport.setBackground(w);
-		modificationReport.setLayout(new BoxLayout(modificationReport, BoxLayout.Y_AXIS));
-		modificationReport.setBorder(BorderFactory.createEmptyBorder(0, 0, 50, 0));
-		JLabel title = new JLabel("Modification Report");
-		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
-		title.setForeground(b);
-		JLabel scrollHeader = new JLabel("                             Files in State                             ");
-		scrollHeader.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		scrollHeader.setOpaque(true);
-		scrollHeader.setForeground(w);
-		scrollHeader.setBackground(b);
-		JPanel container = new JPanel();
-		container.setLayout(new GridLayout(0, 1, 0, 0));
-		container.setBackground(w);
+	public void makeRestoreLocation() {
 		int counter = 0;
 		// We can only get button model from buttongroup so hard to identify
 		// Therefore we extract all the button models from the buttongroup to find the
@@ -576,6 +550,95 @@ public class Visual implements ActionListener {
 			}
 			counter++;
 		}
+		restoreLoc = new JPanel();
+		restoreLoc.setBackground(w);
+		restoreLoc.setLayout(new BoxLayout(restoreLoc, BoxLayout.Y_AXIS));
+		restoreLoc.setBorder(BorderFactory.createEmptyBorder(0, 50, 70, 50));
+		JLabel title = new JLabel("Restore");
+		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
+		title.setForeground(b);
+		JPanel p = new JPanel();
+		p.setLayout(new GridLayout(1, 2, 50, 10));
+		p.setBackground(w);
+		JButton selectALocation = new JButton();
+		selectALocation.setText("Select Restore Location");
+		selectALocation.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		selectALocation.setBackground(b);
+		selectALocation.setForeground(w);
+		final JTextField aLocation = new JTextField(mainframe.getArchive(selectedArchiveIndex).getDataPath());
+		restoreLocation = mainframe.getArchive(selectedArchiveIndex).getDataPath();
+		aLocation.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		aLocation.setEditable(false);
+		p.add(aLocation);
+		p.add(selectALocation);
+		JButton restoreButton = new JButton();
+		restoreButton.setText("Restore");
+		restoreButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		restoreButton.setBackground(b);
+		restoreButton.setForeground(w);
+		restoreLoc.add(backButton());
+		restoreLoc.add(title);
+		title.setAlignmentX(Component.CENTER_ALIGNMENT);
+		title.setBorder(BorderFactory.createEmptyBorder(0, 100, 50, 100));
+		restoreLoc.add(p);
+		restoreLoc.add(Box.createRigidArea(new Dimension(0, 100)));
+		p.setAlignmentX(Component.CENTER_ALIGNMENT);
+		p.setBorder(BorderFactory.createEmptyBorder(20, 100, 100, 100));
+		p.setMaximumSize(new Dimension(Short.MAX_VALUE, 200));
+		restoreLoc.add(restoreButton);
+		restoreButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		selectALocation.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				restoreLocation = browseFileExplorer();
+				aLocation.setText(restoreLocation);
+			}
+		});
+		aLocation.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+			}
+		});
+		restoreButton.addActionListener(this);
+	}
+
+	public void makeModificationReport() {
+		final int selectedArchiveIndex = this.selectedArchiveIndex;
+		JFrame window = new JFrame();
+		window.setBackground(w);
+		window.setVisible(true);
+		window.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		window.setLocationRelativeTo(null);
+		JPanel modificationReport = new JPanel();
+		modificationReport.setBackground(w);
+		modificationReport.setLayout(new BoxLayout(modificationReport, BoxLayout.Y_AXIS));
+		modificationReport.setBorder(BorderFactory.createEmptyBorder(100, 100, 100, 100));
+		JLabel title = new JLabel("Modification Report");
+		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
+		title.setForeground(b);
+		JLabel scrollHeader = new JLabel("                             Files in State                             ");
+		scrollHeader.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		scrollHeader.setOpaque(true);
+		scrollHeader.setForeground(w);
+		scrollHeader.setBackground(b);
+		JPanel container = new JPanel();
+		container.setLayout(new GridLayout(0, 1, 0, 0));
+		container.setBackground(w);
+		int index = 0;
+		int counter = 0;
+		// We can only get button model from buttongroup so hard to identify
+		// Therefore we extract all the button models from the buttongroup to find the
+		// correct index;
+		// Enumeration is an imported class very similar to an arraylist
+		Enumeration<AbstractButton> buttonList = group.getElements();
+		for (Enumeration<AbstractButton> buttons = buttonList; buttons.hasMoreElements();) {
+			AbstractButton button = buttons.nextElement();
+
+			if (button.isSelected()) {
+				index = counter;
+			}
+			counter++;
+		}
+		final int stateIndex = index;
 		for (int i = 0; i < mainframe.getArchive(selectedArchiveIndex).modificationReportDisplay(stateIndex)
 				.size(); i++) {
 			JLabel temp = new JLabel();
@@ -592,11 +655,11 @@ public class Visual implements ActionListener {
 		scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		scroll.setBackground(w);
 		scroll.getVerticalScrollBar().setUnitIncrement(10);
-		JButton save = new JButton();
-		save.setText("Save Report");
-		save.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		save.setBackground(b);
-		save.setForeground(w);
+		JButton callSave = new JButton();
+		callSave.setText("Save Report");
+		callSave.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		callSave.setBackground(b);
+		callSave.setForeground(w);
 		JButton print = new JButton();
 		print.setText("Print");
 		print.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
@@ -607,7 +670,7 @@ public class Visual implements ActionListener {
 		dismiss.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		dismiss.setBackground(b);
 		dismiss.setForeground(w);
-		modificationReport.add(backButton());
+
 		modificationReport.add(title);
 		title.setAlignmentX(Component.CENTER_ALIGNMENT);
 		title.setBorder(BorderFactory.createEmptyBorder(0, 0, 50, 0));
@@ -620,13 +683,95 @@ public class Visual implements ActionListener {
 		p1.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		p1.setBackground(w);
 		p1.setLayout(new FlowLayout());
-		p1.add(save);
+		p1.add(callSave);
 		p1.add(Box.createRigidArea(new Dimension(200, 0)));
 		p1.add(print);
 		p1.add(Box.createRigidArea(new Dimension(200, 0)));
-		// p1.add(dismiss);
+		p1.add(dismiss);
 		modificationReport.add(p1);
-		// meena how to print?
+		window.setContentPane(modificationReport);
+		window.revalidate();
+		// Create return button
+		JPanel returnButton = new JPanel();
+		JButton back = new JButton();
+		back.setText("  Back  ");
+		back.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		back.setBackground(b);
+		back.setForeground(w);
+		returnButton.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 1300));
+		returnButton.add(back);
+		returnButton.setMaximumSize(new Dimension(Short.MAX_VALUE, 100));
+		returnButton.setBackground(w);
+		/// Now create the save as screen of the modifcatiion report
+		JPanel saveAs = new JPanel();
+		saveAs.setBackground(w);
+		saveAs.setLayout(new BoxLayout(saveAs, BoxLayout.Y_AXIS));
+		saveAs.setBorder(BorderFactory.createEmptyBorder(0, 50, 70, 50));
+		JLabel saveAsTitle = new JLabel("Save As");
+		saveAsTitle.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
+		saveAsTitle.setForeground(b);
+		JPanel p = new JPanel();
+		p.setLayout(new GridLayout(1, 2, 50, 10));
+		p.setBackground(w);
+		JButton selectALocation = new JButton();
+		selectALocation.setText("Select Save Location");
+		selectALocation.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		selectALocation.setBackground(b);
+		selectALocation.setForeground(w);
+		final JTextField aLocation = new JTextField("Location of Save");
+		aLocation.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		aLocation.setEditable(false);
+		p.add(aLocation);
+		p.add(selectALocation);
+		JButton save = new JButton();
+		save.setText("Save Report");
+		save.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
+		save.setBackground(b);
+		save.setForeground(w);
+		saveAs.add(returnButton);
+		saveAs.add(saveAsTitle);
+		saveAsTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+		saveAsTitle.setBorder(BorderFactory.createEmptyBorder(0, 100, 50, 100));
+		saveAs.add(p);
+		saveAs.add(Box.createRigidArea(new Dimension(0, 100)));
+		p.setAlignmentX(Component.CENTER_ALIGNMENT);
+		p.setBorder(BorderFactory.createEmptyBorder(20, 100, 100, 100));
+		p.setMaximumSize(new Dimension(Short.MAX_VALUE, 200));
+		saveAs.add(save);
+		save.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+		// actions on saveas
+		selectALocation.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				aLocation.setText(browseFileExplorer());
+			}
+		});
+		aLocation.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+			}
+		});
+		save.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (mainframe.getArchive(selectedArchiveIndex).saveModification(stateIndex, aLocation.getText())) {
+					window.setContentPane(modificationReport);
+					window.revalidate();
+				}
+			}
+		});
+		back.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				window.setContentPane(modificationReport);
+				window.revalidate();
+			}
+		});
+
+		// actions on modifcation report
+		dismiss.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				window.dispose();
+			}
+		});
 		print.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JTextPane jtp = new JTextPane();
@@ -640,23 +785,13 @@ public class Visual implements ActionListener {
 				}
 			}
 		});
-		// what to call to save
-		save.addActionListener(new ActionListener() {
+		// Calls the save as screen
+		callSave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				currPage = Page.SAVE;
-				makeSaveAs();
-				frame.setContentPane(saveAs);
-				frame.revalidate();
+				window.setContentPane(saveAs);
+				window.revalidate();
 			}
 		});
-		// how to dismiss
-		// dismiss.addActionListener(new ActionListener() {
-		// public void actionPerformed(ActionEvent e) {
-		// currPage = Page.OLD_ARCHIVE;
-		// frame.setContentPane(saveAs);
-		// frame.revalidate();
-		// }
-		// });
 
 	}
 
@@ -697,6 +832,7 @@ public class Visual implements ActionListener {
 	}
 
 	public void makeSettings() {
+		validSave = false;
 		settings = new JPanel();
 		settings.setBackground(w);
 		settings.setLayout(new BoxLayout(settings, BoxLayout.Y_AXIS));
@@ -725,7 +861,7 @@ public class Visual implements ActionListener {
 		JButton save = new JButton();
 		save.setText("Confirm New Data Location");
 		save.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		save.setBackground(b);
+		save.setBackground(g);
 		save.setForeground(w);
 		save.setAlignmentX(Component.CENTER_ALIGNMENT);
 		settings.add(backButton());
@@ -734,21 +870,32 @@ public class Visual implements ActionListener {
 		title.setBorder(BorderFactory.createEmptyBorder(0, 100, 0, 100));
 		settings.add(p);
 		p.setAlignmentX(Component.CENTER_ALIGNMENT);
-		p.setBorder(BorderFactory.createEmptyBorder(50, 100, 100, 100));
-		p.setMaximumSize(new Dimension(Short.MAX_VALUE, 200));
+		p.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
+		p.setMaximumSize(new Dimension(Short.MAX_VALUE, 100));
 		trimButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		JPanel space = new JPanel();
 		space.setBackground(w);
 		space.add(Box.createHorizontalGlue());
 		space.add(save);
-		space.setBorder(BorderFactory.createEmptyBorder(20, 70, 0, 0));
+		space.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 0));
 		space.setAlignmentX(Component.CENTER_ALIGNMENT);
-		settings.add(space);
-		settings.add(trimButton);
 
+		settings.add(space);
+		JPanel trimPanel = new JPanel();
+		trimPanel.setBackground(w);
+		trimPanel.add(Box.createHorizontalGlue());
+		trimPanel.add(trimButton);
+		trimPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 0));
+		trimPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+		settings.add(trimPanel);
 		selectDLocation.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				dLocation.setText(browseFileExplorer());
+				String location = browseFileExplorer();
+				if (!location.equals(null)) {
+					dLocation.setText(location);
+					save.setBackground(b);
+					validSave = true;
+				}
 			}
 		});
 		trimButton.addActionListener(new ActionListener() {
@@ -762,66 +909,10 @@ public class Visual implements ActionListener {
 
 		save.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				mainframe.getArchive(selectedArchiveIndex).changeDataLocation(dLocation.getText());
-				currPage = Page.OLD_ARCHIVE;
-				frame.setContentPane(oldArchive);
-				frame.revalidate();
-			}
-		});
-	}
-
-	public void makeSaveAs() {
-		saveAs = new JPanel();
-		saveAs.setBackground(w);
-		saveAs.setLayout(new BoxLayout(saveAs, BoxLayout.Y_AXIS));
-		saveAs.setBorder(BorderFactory.createEmptyBorder(0, 50, 70, 50));
-		JLabel title = new JLabel("Save As");
-		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
-		title.setForeground(b);
-		JPanel p = new JPanel();
-		p.setLayout(new GridLayout(1, 2, 50, 10));
-		p.setBackground(w);
-		JButton selectALocation = new JButton();
-		selectALocation.setText("Select Save Location");
-		selectALocation.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		selectALocation.setBackground(b);
-		selectALocation.setForeground(w);
-		final JTextField aLocation = new JTextField("Location of Save");
-		aLocation.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		aLocation.setEditable(false);
-		p.add(aLocation);
-		p.add(selectALocation);
-		JButton save = new JButton();
-		save.setText("Save Archive");
-		save.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
-		save.setBackground(b);
-		save.setForeground(w);
-		saveAs.add(backButton());
-		saveAs.add(title);
-		title.setAlignmentX(Component.CENTER_ALIGNMENT);
-		title.setBorder(BorderFactory.createEmptyBorder(0, 100, 50, 100));
-		saveAs.add(p);
-		saveAs.add(Box.createRigidArea(new Dimension(0, 100)));
-		p.setAlignmentX(Component.CENTER_ALIGNMENT);
-		p.setBorder(BorderFactory.createEmptyBorder(20, 100, 100, 100));
-		p.setMaximumSize(new Dimension(Short.MAX_VALUE, 200));
-		saveAs.add(save);
-		save.setAlignmentX(Component.CENTER_ALIGNMENT);
-		selectALocation.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				aLocation.setText(browseFileExplorer());
-			}
-		});
-		aLocation.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-
-			}
-		});
-		save.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (mainframe.getArchive(selectedArchiveIndex).saveModification(stateIndex, aLocation.getText())) {
-					currPage = Page.MODIFICATION_REPORT;
-					frame.setContentPane(modificationReport);
+				if (validSave) {
+					mainframe.getArchive(selectedArchiveIndex).changeDataLocation(dLocation.getText());
+					currPage = Page.OLD_ARCHIVE;
+					frame.setContentPane(oldArchive);
 					frame.revalidate();
 				}
 			}
@@ -835,10 +926,28 @@ public class Visual implements ActionListener {
 		JLabel title = new JLabel("Restore");
 		title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 70));
 		title.setForeground(b);
-		JLabel message = new JLabel(
-				"<html><center>" + "A file has been selected for restoration. "
-						+ "Are you sure you want to override the current data to an earlier version?</center></html>",
-				SwingConstants.CENTER);
+		ArrayList<State> states = mainframe.getArchive(selectedArchiveIndex).states;
+		ArrayList<String> stateDisplays = new ArrayList<String>();
+		for (int i = 0; i < states.size(); i++) {
+			stateDisplays.add("State " + states.get(i).getID());
+		}
+		String text = "<html><center>" + stateDisplays.get(stateIndex) + " has been selected for restoration. "
+				+ "Are you sure you want to override the current data to an earlier version? <br>";
+		if (restoreLocation == mainframe.getArchive(selectedArchiveIndex).getDataPath()
+				&& (stateIndex < (stateDisplays.size() - 1))) {
+			if (stateDisplays.size() - stateIndex > 5) {
+				text += "WARNING the newer states will be overwritten!<br>";
+			} else {
+				text += "WARNING the following states will be overwritten:<br>";
+				for (int i = stateIndex + 1; i < stateDisplays.size(); i++) {
+					text += stateDisplays.get(i);
+					if (i < stateDisplays.size() - 1)
+						text += " - ";
+				}
+			}
+		}
+		text += "</center></html>";
+		JLabel message = new JLabel(text, SwingConstants.CENTER);
 		message.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		message.setForeground(b);
 		restore.add(title);
@@ -847,7 +956,7 @@ public class Visual implements ActionListener {
 		restore.add(message);
 		message.setAlignmentX(Component.CENTER_ALIGNMENT);
 		message.setBorder(BorderFactory.createEmptyBorder(0, 50, 0, 50));
-		restore.setPreferredSize(new Dimension(1000, 700));
+		restore.setPreferredSize(new Dimension(1100, 700));
 	}
 
 	public void makeTrim(boolean repaint) {
@@ -862,13 +971,14 @@ public class Visual implements ActionListener {
 		prompt.setText("How many versions do you want to keep?");
 		prompt.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		prompt.setForeground(b);
-		trimBehavior = new JTextField();
+		trimBehavior = new JTextField(3);
 		trimBehavior.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 50));
 		trimBehavior.setMinimumSize(new Dimension(400, 150));
-		if(Integer.parseInt(mainframe.getArchive(selectedArchiveIndex).trimAmnt()) == 9999) {
-			trimBehavior.setText("1         ");
+		if (Integer.parseInt(mainframe.getArchive(selectedArchiveIndex).trimAmnt()) == 9999) {
+			trimBehavior.setText("1      ");
 		} else
-		trimBehavior.setText(mainframe.getArchive(selectedArchiveIndex).trimAmnt());
+			trimBehavior.setText(mainframe.getArchive(selectedArchiveIndex).trimAmnt());
+
 		JLabel versions = new JLabel();
 		versions.setText("versions");
 		versions.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
@@ -906,19 +1016,18 @@ public class Visual implements ActionListener {
 		trim.add(gridPane);
 		gridPane.setAlignmentX(Component.CENTER_ALIGNMENT);
 		gridPane.setBorder(BorderFactory.createEmptyBorder(50, 300, 20, 300));
-		//trim.add(trimBehavior);
 		trim.add(trimNum);
-		if(!repaint) {
-		if (Integer.parseInt(mainframe.getArchive(selectedArchiveIndex).trimAmnt()) == 9999) {
-			trimBehavior.setText("0");
-			trimNum.setVisible(false);
-			trimBehavior.setVisible(false);
-			radio1.setSelected(true);
-			frame.revalidate();
-		} else {
-			trimBehavior.setText(mainframe.getArchive(selectedArchiveIndex).trimAmnt());
-			trimBehavior.setVisible(true);
-		}
+		if (!repaint) {
+			if (Integer.parseInt(mainframe.getArchive(selectedArchiveIndex).trimAmnt()) == 9999) {
+				trimBehavior.setText("0");
+				trimNum.setVisible(false);
+				trimBehavior.setVisible(false);
+				radio1.setSelected(true);
+				frame.revalidate();
+			} else {
+				trimBehavior.setText(mainframe.getArchive(selectedArchiveIndex).trimAmnt());
+				trimBehavior.setVisible(true);
+			}
 		}
 		radio1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -935,13 +1044,6 @@ public class Visual implements ActionListener {
 		});
 		radio2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-//				trimNum.setVisible(true);
-////				trimBehavior.setVisible(true);
-////				trimBehavior.setText(mainframe.getArchive(selectedArchiveIndex).trimAmnt());
-////				if (Integer.parseInt(mainframe.getArchive(selectedArchiveIndex).trimAmnt()) == 9999) {
-////					trimBehavior.setText("" + 1);
-////				}
-				// oldArchive.removeAll();
 				makeOldArchive();
 				makeTrim(true);
 				currPage = Page.TRIM;
@@ -1026,7 +1128,8 @@ public class Visual implements ActionListener {
 							t.stop();
 							mainframe.getArchive(selectedArchiveIndex).resetLoadingBar();
 							currPage = Page.BACKUP;
-							frame.setContentPane(backUp);
+							makeOldArchive();
+							frame.setContentPane(oldArchive);
 							frame.revalidate();
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
@@ -1103,7 +1206,6 @@ public class Visual implements ActionListener {
 				currPage = Page.OLD_ARCHIVE;
 				frame.setContentPane(oldArchive);
 				frame.revalidate();
-
 			}
 		});
 		delete.addActionListener(new ActionListener() {
@@ -1131,7 +1233,7 @@ public class Visual implements ActionListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
-		if ((!trimBehavior.isVisible()) && e.getActionCommand().trim().equals("Trim")) {
+		if ((valid) && e.getActionCommand().trim().equals("Trim")) {
 			JButton[] buttons = { new JButton("Cancel"), new JButton("Continue") };
 			buttons[0].addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -1179,13 +1281,11 @@ public class Visual implements ActionListener {
 					process.start();
 					process.setPriority(10);
 					popup.revalidate();
-					// frame.revalidate();
 				}
 			});
 			makeConfirmation();
 			popUp(confirmation, "Trim Confirmation", buttons);
-		} else if (e.getActionCommand().trim()
-				.equals("<html><center>Restore to " + "<br>Current Location</center></html>")) {
+		} else if (e.getActionCommand().trim().equals("Restore")) {
 			JButton[] buttons = { new JButton("No"), new JButton("Yes") };
 			buttons[0].addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
@@ -1218,10 +1318,17 @@ public class Visual implements ActionListener {
 					};
 					Runnable backup = new Runnable() {
 						public void run() {
-							mainframe.getArchive(selectedArchiveIndex).restore(stateIndex);
+							if (restoreLocation.equals(mainframe.getArchive(selectedArchiveIndex).getDataPath())) {
+								mainframe.getArchive(selectedArchiveIndex).restore(stateIndex);
+							} else {
+								mainframe.getArchive(selectedArchiveIndex).restore(stateIndex, restoreLocation);
+							}
 							popup.dispose();
 							t.stop();
 							mainframe.getArchive(selectedArchiveIndex).resetLoadingBar();
+							currPage = Page.OLD_ARCHIVE;
+							makeOldArchive();
+							frame.setContentPane(oldArchive);
 							frame.revalidate();
 						}
 					};
@@ -1233,8 +1340,10 @@ public class Visual implements ActionListener {
 					popup.revalidate();
 				}
 			});
-			if (valid)
+			if (valid) {
+				makeRestore();
 				popUp(restore, "Restore Confirmation", buttons);
+			}
 		}
 		frame.revalidate();
 	}
@@ -1271,35 +1380,36 @@ public class Visual implements ActionListener {
 		back.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if ((!(trimBehavior.getText().isEmpty()))
-						&& (currPage.equals(Page.TRIM) && (Integer.parseInt(trimBehavior.getText().trim())) > 0) &&currPage == Page.TRIM) {
+						&& (currPage.equals(Page.TRIM) && (Integer.parseInt(trimBehavior.getText().trim())) > 0)
+						&& currPage == Page.TRIM) {
 					autoConfirmation.removeAll();
 					makeAutoConfirmation();
 					popUp(autoConfirmation, "Automatic Trim Confirmation", buttons);
-				} else if ((!(trimBehavior.getText().isEmpty())) && (Integer.parseInt(trimBehavior.getText()) == 0) &&currPage == Page.TRIM) {
+				} else if ((!(trimBehavior.getText().isEmpty())) && (Integer.parseInt(trimBehavior.getText()) == 0)
+						&& currPage == Page.TRIM) {
 					mainframe.getArchive(selectedArchiveIndex).changeTrim(9999);
+					makeSettings();
 					currPage = Page.SETTINGS;
 					frame.setContentPane(settings);
 					frame.revalidate();
 				} else {
-					if(currPage == Page.ARCHIVE_LIST) {
+					if (currPage == Page.ARCHIVE_LIST) {
 						currPage = Page.START;
 						frame.setContentPane(start);
-					} else if (currPage == Page.NEW_ARCHIVE || currPage == Page.OPEN_FILE || currPage == Page.OLD_ARCHIVE) {
+					} else if (currPage == Page.NEW_ARCHIVE || currPage == Page.OPEN_FILE
+							|| currPage == Page.OLD_ARCHIVE) {
 						currPage = Page.ARCHIVE_LIST;
 						makeArchiveList();
 						frame.setContentPane(archiveList);
-					} else if (currPage == Page.MODIFICATION_REPORT || currPage == Page.BACKUP || currPage == Page.SETTINGS) {
+					} else if (currPage == Page.MODIFICATION_REPORT || currPage == Page.BACKUP
+							|| currPage == Page.SETTINGS || currPage == Page.RESTORE_LOC) {
 						currPage = Page.OLD_ARCHIVE;
 						makeOldArchive();
-						System.out.print("ok");
 						frame.setContentPane(oldArchive);
 					} else if (currPage == Page.TRIM) {
+						makeSettings();
 						currPage = Page.SETTINGS;
 						frame.setContentPane(settings);
-					} else if (currPage == Page.SAVE) {
-						currPage = Page.MODIFICATION_REPORT;
-						makeModificationReport();
-						frame.setContentPane(modificationReport);
 					}
 					frame.revalidate();
 				}
@@ -1335,10 +1445,6 @@ public class Visual implements ActionListener {
 		frame.setVisible(true);
 		UIManager.put("OptionPane.background", w);
 		UIManager.put("Panel.background", w);
-		/*
-		 * try { progressBar.iterate(); } catch (InterruptedException e) {
-		 * e.printStackTrace(); }
-		 */
 	}
 
 	class ProgressBar extends JPanel {
