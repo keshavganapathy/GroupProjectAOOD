@@ -35,10 +35,10 @@ public class Archive {
 
 	ArrayList<State> states; // states ordered from oldest to newest
 
-	private int numberStatesKept; // TODO: remember to change this in the other class this will be changed in
+	private int numberStatesKept;
 	private int loadingBarCounter = 0;
 
-	private int stateNumber; // TODO: temporary. this is the number of the latest state.
+	private int stateNumber;
 
 	public Archive(String archivePath, String dataPath, String name, boolean newArchive) {
 
@@ -96,26 +96,12 @@ public class Archive {
 			}
 
 			readXML();
-			/*
-			 * for (State state: states) { System.out.println(state.getPath());
-			 * System.out.println(state.getID()); }
-			 */
+
 		}
-		/*
-		 * System.out.println("stateNumber: " + stateNumber);
-		 * System.out.println("numberStatesKept: " + numberStatesKept);
-		 */
+
 	}
 
-	public void trimState(int selectedIndex) { // TODO: test trimState
-		//
-		// TODO: change modification report for the more recent state
-		// TODO: modify file system, deleting the folder for each state before
-		// selected index
-//		for (State state : states) {
-//			// System.out.println(state.getPath());
-//			// System.out.println(state.getID());
-//		}
+	public void trimState(int selectedIndex) {
 		loadingBarCounter = 0;
 
 		File currentDirectory;
@@ -123,7 +109,6 @@ public class Archive {
 			try {
 				Thread.sleep(200);
 			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			currentDirectory = new File(states.get(i).getPath());
@@ -133,27 +118,72 @@ public class Archive {
 				e.printStackTrace();
 			}
 			states.remove(i);
-			loadingBarCounter += (90/(selectedIndex+ 1));
+			loadingBarCounter += (90 / (selectedIndex + 1));
 		}
 		try {
 			Thread.sleep(200);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		updateXML();
 		loadingBarCounter = 100;
-		// change the modification report of state of index 0.
 	}
 
 	public void restore(int selectedIndex) { // if restoring to the data location
-		// TODO: prompt user with a pop up asking "are you sure"
-		//// ONLY FOR THIS METHOD, not the general destinationpath one
-		// System.out.println(" " + selectedIndex);
-		restore(selectedIndex, dataPath);
+		loadingBarCounter = 0;
+		File source = new File(states.get(selectedIndex).getPath());
+		File destination = new File(dataPath);
+		File currentDirectory;
+		for (int i = states.size() - 1; i > selectedIndex; i--) { // counting down is important
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+			currentDirectory = new File(states.get(i).getPath());
+			try {
+				FileUtils.deleteDirectory(currentDirectory);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			states.remove(i);
+			loadingBarCounter += (60 / (i));
+			stateNumber--;
+		}
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		loadingBarCounter = 60;
+		updateXML();
+		File archiveData = new File(archiveDataPath);
+		try {
+			Thread.sleep(100);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		try {
+			FileUtils.cleanDirectory(destination); // deleting all files in the target directory
+			FileUtils.copyDirectory(source, destination); // replacing the target directory w/ source directory
+			loadingBarCounter = 80;
+			FileUtils.cleanDirectory(archiveData);
+			FileUtils.copyDirectoryToDirectory(source, archiveData);
+			states.get(selectedIndex).setPath(archiveData + "\\" + source.getName());
+			FileUtils.deleteDirectory(source);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		loadingBarCounter = 100;
+		try {
+			Thread.sleep(300);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		updateXML();
 	}
 
-	public void restore(int selectedIndex, String destinationPath) {
+	public void restore(int selectedIndex, String destinationPath) { // if restoring to other path
 		loadingBarCounter = 0;
 		File source = new File(states.get(selectedIndex).getPath());
 		File destination = new File(destinationPath);
@@ -161,7 +191,6 @@ public class Archive {
 		try {
 			Thread.sleep(300);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		try {
@@ -178,52 +207,9 @@ public class Archive {
 			e.printStackTrace();
 		}
 	}
+
 	public void resetLoadingBar() {
 		loadingBarCounter = 0;
-	}
-	public void backUpOld() { // TODO: backup needs to be more efficient apparently
-		stateNumber++;
-		updateXML();
-
-		// creating a new backup here
-		// TODO: progress bar
-		// first, creating a new directory
-		// path of the new state file will be in the metadata folder
-
-		String newStatePath = statesFolderPath + "\\state_" + stateNumber;
-		File newStateDirectory = new File(newStatePath);
-		if (!newStateDirectory.exists()) {
-			newStateDirectory.mkdir();
-		}
-
-		// creating the signal file in the metadata folder
-		String signalFilePath = metadataPath + "SIGNAL_FILE_206214.txt"; // this name gotta stay constant
-		File signalFile = new File(signalFilePath);
-		try {
-			signalFile.createNewFile();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		// copying data from datalocation into state folder
-		File data = new File(dataPath);
-		try {
-			FileUtils.copyDirectory(data, newStateDirectory);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		// TODO: change the XML file. (state info, and increment the latest state number
-		// by 1)
-		signalFile.delete();
-
-		states.add(new State(newStatePath, stateNumber, dataPath));
-		if (states.size() > numberStatesKept) {
-			int amountOfStatesTrimmed = states.size() - numberStatesKept;
-			for (int i = 0; i < amountOfStatesTrimmed; i++) {
-				trimState(0);
-			}
-		}
-
 	}
 
 	public void backUp() throws InterruptedException { // TODO: backup needs to be more efficient apparently
@@ -244,10 +230,6 @@ public class Archive {
 		Thread.sleep(200);
 
 		// creating a new backup here
-		// TODO: progress bar
-		// first, creating a new directory
-		// path of the new state file will be in the metadata folder
-		// System.out.print(archiveDataPath);
 		File archiveData = new File(archiveDataPath);
 		File statesFolder = new File(statesFolderPath);
 		try {
@@ -276,8 +258,6 @@ public class Archive {
 		}
 		loadingBarCounter = 80;
 		Thread.sleep(200);
-		// TODO: change the XML file. (state info, and increment the latest state number
-		// by 1)
 
 		states.add(new State(newStatePath, stateNumber, dataPath));
 		if (states.size() > numberStatesKept) {
@@ -320,46 +300,35 @@ public class Archive {
 		}
 		File archiveData = new File(archiveDataPath);
 		String[] list = archiveData.list();
-		if(list.length > 1) {
-			if(list[0] == "state_" + stateNumber) {
+		if (list.length > 1) {
+			if (list[0] == "state_" + stateNumber) {
 				try {
 					FileUtils.cleanDirectory(archiveData);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			if(list[0] == "state_" + (stateNumber - 1)) {
+			if (list[0] == "state_" + (stateNumber - 1)) {
 				stateNumber--;
 			}
-			
+
 		}
-		if(states.size() > 0 && archiveData.list().length == 0) {
+		if (states.size() > 0 && archiveData.list().length == 0) {
 			File previousState = new File(statesFolderPath + "\\state_" + (stateNumber - 1));
 			try {
 				FileUtils.copyDirectoryToDirectory(previousState, archiveData);
 				FileUtils.deleteDirectory(previousState);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-//		File currentDirectory = new File(states.get(states.size() - 1).getPath());
-//		try {
-//			FileUtils.deleteDirectory(currentDirectory);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		
-//		states.remove(states.size() - 1);
+
 		File signalFile = new File(metadataPath + "\\SIGNAL_FILE_206214.txt");
 		signalFile.delete();
-		// TODO: REMOVE THE DIRECTORY PROBABLY?
 		if (replace) {
 			try {
 				backUp();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -388,14 +357,6 @@ public class Archive {
 		return archivePath;
 	}
 
-	// public void setNumberStatesKept(int num) {
-	// numberStatesKept = num;
-	// if (states.size() > numberStatesKept) {
-	// trimState(numberStatesKept - states.size() - 1);
-	// }
-	// updateXML();
-	// }
-
 	private void readXML() {
 		try {
 			File fXmlFile = new File(archivePath + "\\metadata\\Properties.xml");
@@ -419,10 +380,8 @@ public class Archive {
 		} catch (ParserConfigurationException pce) {
 			pce.printStackTrace();
 		} catch (SAXException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
