@@ -1,4 +1,3 @@
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.io.File;
 import java.io.IOException;
@@ -6,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 
 public class Change {
 	private String pathName;
@@ -90,6 +88,7 @@ public class Change {
 	public String getName() {
 		return name;
 	}
+
 	public String display() {
 		String display = getName() + " - " + getDate() + " - " + type();
 		return display;
