@@ -65,22 +65,9 @@ public class Mainframe {
 		return archives.get(i);
 	}
 
-	// public boolean browseFileExplorer() {
-	// boolean run = false;
-	// JFileChooser jfc = new JFileChooser();
-	// jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-	// jfc.showOpenDialog(null);
-	// if(jfc.getSelectedFile() != null)
-	// run = openArchive(jfc.getSelectedFile().toString(), "");
-	// return run;
-	// }
 	public ArrayList<Archive> getArchives() {
 		return archives;
-	} // TODO: returns list of archives
-	// public static void main(String[]args) {
-	// Archive pineapple = new Archive("C:\\Users\\mbenal0768\\Desktop\\archive",
-	// "C:\\Users\\mbenal0768\\Desktop\\yuwhan", false);
-	// }
+	}
 
 	public void closeArchive() {
 		archives.remove(archives.size() - 1);
