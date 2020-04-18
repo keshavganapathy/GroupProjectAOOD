@@ -1,5 +1,3 @@
-import java.awt.*;
-import java.awt.print.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,23 +21,13 @@ public class State {
 		modificationReport = new ArrayList<Change>();
 		// assuming that the state before this one exists
 		File currentState = new File(statePath);
-		File metadataFolder = new File(currentState.getParent()); // parent of the state path is metadata folder
-		// String previousStatePath = metadataFolder + "\\state_" + (id - 1);
 		File previousState = new File(previousStatePath);
 
-		// String[] currentFiles = currentState.list();
 		ArrayList<File> currentFiles = getAllFiles(currentState);
 
 		String[] currentStateFilePaths = getOnlyFilePaths(currentFiles, statePath);
 		ArrayList<File> previousFiles = getAllFiles(previousState);
 		String[] previousStateFilePaths = getOnlyFilePaths(previousFiles, previousStatePath);
-		/*
-		 * System.out.println("current: "); for (String str: currentStateFilePaths) {
-		 * System.out.println(str); }
-		 * 
-		 * System.out.println("previous: "); for (String str: previousStateFilePaths) {
-		 * System.out.println(str); }
-		 */
 
 		// new files
 		for (int i = 0; i < currentStateFilePaths.length; i++) {
@@ -55,26 +43,15 @@ public class State {
 			if (arrayContains(previousStateFilePaths, filePath)) {
 				File currentFile = new File(statePath + "\\" + filePath);
 				File previousFile = new File(previousStatePath + "\\" + filePath);
-				/*
-				 * System.out.println("currentmodified: " + currentFile.lastModified());
-				 * System.out.println("previousmodified: " + previousFile.lastModified());
-				 */
-				if (currentFile.lastModified() != previousFile.lastModified()) {
+
+				if (currentFile.lastModified() != previousFile.lastModified() && (!currentFile.isDirectory())) {
 					modificationReport.add(new Change(statePath + "\\" + filePath, Change.Type.EDIT));
 				}
 			}
 		}
-		// TODO: new and edits
-		/*
-		 * System.out.println("\n\n report:"); for (Change change: modificationReport) {
-		 * System.out.println(change.getPath() + " - " + change.type()); }
-		 */
+
 		return modificationReport;
 	}
-	/*
-	 * public ArrayList<Change> getModificationReport() { return modificationReport;
-	 * }
-	 */
 
 	private static boolean arrayContains(String[] arr, String str) {
 		boolean returnBoolean = false;
@@ -135,10 +112,10 @@ public class State {
 
 	public String print() {
 		String report = "Modification Report State " + id + "\r\n";
-
-		for (Change change : modificationReport)
-			report += (change.display() + "\r\n");
-		
+		if (!modificationReport.isEmpty()) {
+			for (Change change : modificationReport)
+				report += (change.display() + "\r\n");
+		}
 		return report;
 
 	}
