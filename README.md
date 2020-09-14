@@ -1,3 +1,3 @@
 # Group-Project-AOOD
 
-wow aood ! i love this class!
+SyncTool Group Project for Advanced Object-Oriented Design G/T.
